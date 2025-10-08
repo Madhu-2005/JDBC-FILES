@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ticket Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #4facfe, #00f2fe);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      width: 350px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      color: #333;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+    input:focus {
+      border-color: #4facfe;
+      outline: none;
+    }
+    .error {
+      color: red;
+      font-size: 0.85rem;
+      margin-top: -8px;
+      margin-bottom: 10px;
+      display: none;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #4facfe;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover {
+      background: #3a8fd4;
+    }
+    .ticket {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f7f7f7;
+      border: 2px dashed #333;
+      border-radius: 10px;
+      text-align: center;
+      display: none;
+    }
+    .ticket-id {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #4facfe;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🎟 Get Your Ticket</h2>
+    <form id="ticketForm">
+      <label for="name">Full Name</label>
+      <input type="text" id="name" placeholder="Enter your name" required>
+      <div class="error" id="nameError">Name must be at least 3 characters.</div>
+
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="Enter your email" required>
+      <div class="error" id="emailError">Please enter a valid email.</div>
+
+      <label for="phone">Phone</label>
+      <input type="tel" id="phone" placeholder="Enter phone number" required>
+      <div class="error" id="phoneError">Phone must be 10 digits.</div>
+
+      <button type="submit">Generate Ticket</button>
+    </form>
+    <div class="ticket" id="ticket">
+      <p>✅ Ticket Generated!</p>
+      <p class="ticket-id" id="ticketId"></p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('ticketForm');
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const phoneInput = document.getElementById('phone');
+    const nameError = document.getElementById('nameError');
+    const emailError = document.getElementById('emailError');
+    const phoneError = document.getElementById('phoneError');
+    const ticket = document.getElementById('ticket');
+    const ticketId = document.getElementById('ticketId');
+
+    // Validation functions
+    function validateName() {
+      if (nameInput.value.trim().length < 3) {
+        nameError.style.display = 'block';
+        return false;
+      }
+      nameError.style.display = 'none';
+      return true;
+    }
+
+    function validateEmail() {
+      const emailPattern = /^[^ ]+@[^ ]+\.[a-z]{2,3}$/;
+      if (!emailPattern.test(emailInput.value.trim())) {
+        emailError.style.display = 'block';
+        return false;
+      }
+      emailError.style.display = 'none';
+      return true;
+    }
+
+    function validatePhone() {
+      const phonePattern = /^[0-9]{10}$/;
+      if (!phonePattern.test(phoneInput.value.trim())) {
+        phoneError.style.display = 'block';
+        return false;
+      }
+      phoneError.style.display = 'none';
+      return true;
+    }
+
+    function generateTicketId() {
+      const date = new Date();
+      const datePart = date.toISOString().slice(0,10).replace(/-/g,'');
+      const randomPart = Math.floor(1000 + Math.random() * 9000);
+      return `TCKT-${datePart}-${randomPart}`;
+    }
+
+    // Real-time validation
+    nameInput.addEventListener('input', validateName);
+    emailInput.addEventListener('input', validateEmail);
+    phoneInput.addEventListener('input', validatePhone);
+
+    // Form submission
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const isValid = validateName() & validateEmail() & validatePhone();
+      if (isValid) {
+        const id = generateTicketId();
+        ticketId.textContent = id;
+        ticket.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
