@@ -1,0 +1,157 @@
+from flask import Flask, request, redirect, session, render_template_string
+from flask_bcrypt import Bcrypt
+import sqlite3
+
+app = Flask(__name__)
+app.secret_key = "secret_key_123"
+
+bcrypt = Bcrypt(app)
+
+# Database Setup
+conn = sqlite3.connect("users.db")
+cur = conn.cursor()
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS users(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password TEXT
+)
+""")
+
+conn.commit()
+conn.close()
+
+# Register Page
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+
+    if request.method == 'POST':
+
+        username = request.form['username'].strip()
+        password = request.form['password']
+
+        # Input Validation
+        if len(username) < 3:
+            return "Username must be at least 3 characters"
+
+        if len(password) < 8:
+            return "Password must be at least 8 characters"
+
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+        conn = sqlite3.connect("users.db")
+        cur = conn.cursor()
+
+        try:
+            # SQL Injection Safe
+            cur.execute(
+                "INSERT INTO users(username,password) VALUES(?,?)",
+                (username, hashed_password)
+            )
+
+            conn.commit()
+
+        except:
+            conn.close()
+            return "User already exists"
+
+        conn.close()
+
+        return redirect('/login')
+
+    return render_template_string("""
+    <h2>Register</h2>
+
+    <form method="post">
+        Username:
+        <input type="text" name="username"><br><br>
+
+        Password:
+        <input type="password" name="password"><br><br>
+
+        <button type="submit">Register</button>
+    </form>
+
+    <br>
+    <a href="/login">Login</a>
+    """)
+
+# Login Page
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+
+    if request.method == 'POST':
+
+        username = request.form['username']
+        password = request.form['password']
+
+        conn = sqlite3.connect("users.db")
+        cur = conn.cursor()
+
+        # SQL Injection Safe
+        cur.execute(
+            "SELECT * FROM users WHERE username=?",
+            (username,)
+        )
+
+        user = cur.fetchone()
+
+        conn.close()
+
+        if user and bcrypt.check_password_hash(user[2], password):
+
+            session['user'] = username
+
+            return redirect('/dashboard')
+
+        return "Invalid Username or Password"
+
+    return render_template_string("""
+    <h2>Login</h2>
+
+    <form method="post">
+        Username:
+        <input type="text" name="username"><br><br>
+
+        Password:
+        <input type="password" name="password"><br><br>
+
+        <button type="submit">Login</button>
+    </form>
+
+    <br>
+    <a href="/register">Register</a>
+    """)
+
+# Dashboard
+@app.route('/dashboard')
+def dashboard():
+
+    if 'user' not in session:
+        return redirect('/login')
+
+    return render_template_string("""
+    <h1>Welcome {{user}}</h1>
+
+    <p>Login Successful</p>
+
+    <a href="/logout">Logout</a>
+    """, user=session['user'])
+
+# Logout
+@app.route('/logout')
+def logout():
+
+    session.pop('user', None)
+
+    return redirect('/login')
+
+# Home
+@app.route('/')
+def home():
+    return redirect('/login')
+
+# Run App
+if __name__ == '__main__':
+    app.run(debug=False)
